@@ -12,8 +12,6 @@ Usage (Colab/Notebook):
   pip install kagglehub pillow tqdm pandas
   # then run this cell/file; defaults will build a small sample
 
-Usage (CLI):
-  python src/build_dataset.py --out data_kagglehub_unified --images-per-class 1000
 """
 
 import argparse, io, os, sys, json, csv, hashlib, shutil, random, re
@@ -34,12 +32,12 @@ except Exception:
     print("This script needs kagglehub. Install with: pip install kagglehub", file=sys.stderr)
     raise
 
-# ==============================================================================
+# ============================================================
 # 0) GLOBAL LABELS & ALIASES (edit me)
 #    - Put your canonical labels here (e.g., 'bird', 'cloud', 'building', 'airplane', etc.)
 #    - Any dataset-specific label that appears as a key in ALIAS_TO_CANONICAL is normalized to the canonical.
-#      If a label isn't listed, it will pass through as-is (lowercased, spaces->underscores).
-# ==============================================================================
+#      If a label isn’t listed, it will pass through as-is (lowercased, spaces->underscores).
+# ============================================================
 
 CANONICAL_LABELS: List[str] = [
     "bird",
@@ -85,6 +83,7 @@ INVALID_BACKGROUND_FINE: set = {'aerial_landscape', 'cloud_blanksky','tree_shrub
 }
 
 
+
 def map_validity(fine_label: str) -> str:
     """Return 'valid', 'invalid', or 'unknown' for a given fine class."""
     if fine_label in VALID_FINE:
@@ -95,7 +94,7 @@ def map_validity(fine_label: str) -> str:
         return "invalid_background"
     return "unknown"
 
-# ==============================================================================
+# ============================================================
 # 1) DATASET REGISTRY (edit me)
 #    Add a new block to wire in a dataset.
 #    Choose ONE of these label strategies:
@@ -104,7 +103,7 @@ def map_validity(fine_label: str) -> str:
 #       - "regex":  extract label with a regex that has a (?P<label>...) group
 #
 #    For overlapping labels across datasets, the alias map above merges to the same canonical label.
-# ==============================================================================
+# ============================================================
 
 DATASETS: List[dict] = [
 {
@@ -146,23 +145,23 @@ DATASETS: List[dict] = [
     #     "strategy":"regex",
     #     "params":{
     #         "glob":"**/*.jpg",
-    #         "pattern": r".*/(?P<label>[A-Za-z_]+)/[^/]+\.jpg$",
+    #         "pattern": r".*/(?P<label>[A-Za-z_]+)/[^/]+\\.jpg$",
     #     },
     #     "allow_labels": None,
     # },
 ]
 
-# ==============================================================================
+# ============================================================
 # 2) PIPELINE SETTINGS (CLI overridable)
-# ==============================================================================
+# ============================================================
 
 DEFAULT_SIZE = 512
 DEFAULT_JPG_QUALITY = 512
 RNG = random.Random(1337)
 
-# ==============================================================================
+# ============================================================
 # 3) CORE HELPERS
-# ==============================================================================
+# ============================================================
 
 def normalize_label(lbl: str) -> str:
     """Lowercase, strip, replace spaces with underscores, then alias to canonical if present."""
@@ -199,9 +198,9 @@ def choose_split(r: float, splits: Tuple[float,float,float]) -> str:
     tr, va, te = splits
     return "train" if r < tr else ("val" if r < tr + va else "test")
 
-# ==============================================================================
+# ============================================================
 # 4) DATASET STRATEGIES
-# ==============================================================================
+# ============================================================
 
 @dataclass
 class LabeledPath:
@@ -265,9 +264,9 @@ def scan_regex(root: Path, glob_pat: str, regex_pat: str,
         if canonical_ok(lbl, allow_labels):
             yield LabeledPath(p, lbl, provider_name)
 
-# ==============================================================================
+# ============================================================
 # 5) BUILD PIPELINE
-# ==============================================================================
+# ============================================================
 
 def build_dataset(
     out_dir: Path,
@@ -427,9 +426,9 @@ def build_dataset(
     if zip_out:
         make_zip(out_dir)
 
-# ==============================================================================
+# ============================================================
 # 6) IO WRITERS
-# ==============================================================================
+# ============================================================
 
 def write_metadata(out_dir: Path, rows: List[dict]):
     fields = [
@@ -463,7 +462,7 @@ def save_label_map(out_dir: Path, fine_classes: List[str]):
 def write_readme(out_dir: Path, size: int, images_per_class: int, splits: Tuple[float,float,float]):
     with open(out_dir/"README.txt","w",encoding="utf-8") as f:
         f.write("Universal KaggleHub Dataset Builder\n")
-        f.write("===================================\n\n")
+        f.write("==================================\n\n")
         f.write(f"Image size: {size}x{size}\n")
         f.write(f"Target per class: {images_per_class}\n")
         f.write(f"Splits: train={splits[0]:.3f}, val={splits[1]:.3f}, test={splits[2]:.3f}\n\n")
@@ -478,9 +477,9 @@ def make_zip(out_dir: Path):
     shutil.make_archive(str(out_dir), "zip", root_dir=str(out_dir))
     print(f"[OK] Wrote ZIP: {zip_path}")
 
-# ==============================================================================
+# ============================================================
 # 7) CLI (Notebook-safe)
-# ==============================================================================
+# ============================================================
 
 def main(argv: Optional[List[str]] = None):
     ap = argparse.ArgumentParser(description="Universal KaggleHub dataset builder (safe).",
@@ -490,7 +489,7 @@ def main(argv: Optional[List[str]] = None):
     ap.add_argument("--size", type=int, default=DEFAULT_SIZE, help="Output square size (px)")
     ap.add_argument("--splits", type=float, nargs=3, default=[0.8,0.1,0.1], metavar=("TRAIN","VAL","TEST"))
     ap.add_argument("--seed", type=int, default=1337, help="RNG seed")
-    ap.add_argument("--jpg-quality", type=int, default=DEFAULT_JPG_QUALITY, help="JPEG quality")
+    ap.add_argument("--jpg-quality", type=int, default=512, help="JPEG quality")
     ap.add_argument("--zip", action="store_true", help="Zip dataset at the end")
     ap.add_argument("--classes", type=str, default=None, help="Comma-separated subset of canonical labels to keep")
     args, _ = ap.parse_known_args(argv)
@@ -515,5 +514,6 @@ def main(argv: Optional[List[str]] = None):
     )
 
 if __name__ == "__main__":
-    # Notebook-safe: unrecognized Jupyter kernel flags are ignored by parse_known_args
+    # Notebook-safe: unrecognized Jupyter kernel flags are ignored
+    # by parse_known_args. argv=[] in the notebook ignored real CLI args.
     main()

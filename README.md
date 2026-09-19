@@ -128,8 +128,19 @@ models/      real-time classifier weights + label map
 docs/        full technical report (PDF)
 ```
 
-The notebooks are the versions that actually produced these results; the scripts are the same code
-with Colab-specific paths replaced by relative defaults.
+### Provenance
+
+`notebooks/` holds the original Colab notebooks verbatim, with execution outputs stripped and
+nothing else changed. `src/` is the same code lifted out of those cells, with exactly three edits:
+
+- `train_model.py`, `evaluate_model.py` — `DATA_ROOT` now reads the `DATA_ROOT` environment variable
+  and defaults to `./data_kagglehub_unified`, instead of a hard-coded `C:\Users\Owner\...` path.
+- `realtime_yolo_classifier.py` — the `--model`, `--label-map` and `--source` argparse defaults point
+  at relative paths instead of hard-coded local ones. The originals are kept in comments.
+- `build_dataset.py` — the entry point calls `main()` rather than `main(argv=[])`, so command-line
+  arguments are honoured when the file is run as a script.
+
+Every other byte matches the notebooks.
 
 ## Report
 
