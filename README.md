@@ -1,0 +1,138 @@
+# Drone Target Identification Model
+
+An end-to-end deep-learning pipeline for drone- and camera-based target identification. It unifies
+heterogeneous public image datasets, trains a multi-output CNN that predicts both a fine-grained
+object class and a coarse valid/invalid label, and embeds the trained classifier behind a YOLO
+segmentation front-end for real-time video.
+
+Project page: **[loganmedwardsastrophy.com/drone-target.html](https://www.loganmedwardsastrophy.com/drone-target.html)**
+
+## Results
+
+Held-out test set: **27,362 samples** across 11 fine classes. Naïve single-class baselines reach
+23.52% (fine) and 34.50% (coarse), so both heads have to learn real structure to be useful.
+
+| Head | Accuracy | Macro F1 | Baseline |
+|---|---|---|---|
+| Fine (11-way) | 87.62% | 0.8524 | 23.52% |
+| Coarse (3-way valid/invalid) | 91.17% | 0.9117 | 34.50% |
+
+<p align="center">
+  <img src="results/final_confusion_fine.png" width="520" alt="Fine-head confusion matrix across 11 classes">
+</p>
+
+Per-class precision is strongest on visually distinct categories (`aerial_landscape` 0.970,
+`civilian_vehicle` 0.945, `cloud_blanksky` 0.944) and weakest where classes share appearance
+(`civilian` 0.750, `random_animal` 0.777, `rock_debris` 0.770). Full breakdowns are in
+[`results/`](results).
+
+> The figures above come from the 128×128 / 50-epoch run whose artifacts are checked in here. The
+> project page quotes a sibling run of the same architecture (87.1% fine / 91.3% coarse) — the
+> baselines and test-set size are identical, the headline accuracies differ by a few tenths of a point.
+
+## Pipeline
+
+Three modular stages, each independently runnable.
+
+| Stage | Script | Notebook | What it does |
+|---|---|---|---|
+| 1. Dataset builder | [`src/build_dataset.py`](src/build_dataset.py) | [`01_cataloguing_pipeline`](notebooks/01_cataloguing_pipeline.ipynb) | Pulls images from KaggleHub sources, reorganizes them into a single `images/` tree and a unified `metadata.csv`, hash-dedupes, and aliases dataset-specific terms onto canonical labels. |
+| 2. Training | [`src/train_model.py`](src/train_model.py) | [`02_training_testing_network`](notebooks/02_training_testing_network.ipynb) | Trains the multi-output CNN (fine + coarse heads), writes confusion matrices, classification reports and training curves. |
+| 2b. Evaluation | [`src/evaluate_model.py`](src/evaluate_model.py) | (same notebook, 2nd cell) | Detailed test metrics for a trained checkpoint: per-class accuracy, micro/macro/weighted P/R/F1, confusion matrices. |
+| 3. Real-time | [`src/realtime_yolo_classifier.py`](src/realtime_yolo_classifier.py) | [`03_video_implementation`](notebooks/03_video_implementation.ipynb) | YOLO segmentation produces per-frame instance masks; each mask is cropped, normalized to match training, classified, and overlaid on the source frame in the predicted coarse label's colour. |
+
+### Labels
+
+11 fine classes map onto 3 coarse validity buckets (see [`models/label_map.json`](models/label_map.json)):
+
+- **valid** — `soldier`, `tank_av`, `flying_target`
+- **invalid_nontarget** — `civilian`, `civilian_vehicle`
+- **invalid_background** — `aerial_landscape`, `cloud_blanksky`, `tree_shrub`, `rock_debris`, `random_animal`, `bird`
+
+The live overlay consults only the coarse head: the operational question is "valid target?". `valid`
+renders green, `invalid_nontarget` red, and `invalid_background` is suppressed entirely.
+
+## Model
+
+A compact multi-output ConvNet: `Conv → BatchNorm → ReLU → MaxPool` blocks with growing channel
+depth (32 → 64 → 128), then a shared dense trunk that feeds two softmax heads (11-way fine, 3-way
+coarse). Both heads are optimized jointly with categorical cross-entropy and configurable per-head
+weights; dropout and L2 regularization mitigate overfitting, with AdamW and a plateau-triggered LR
+schedule.
+
+Sample weights down-weight over-represented classes (notably `invalid_background`). Setting
+`IGNORE_INVALID_IN_FINE = True` makes invalid examples train only the coarse head, freeing the fine
+head to focus on examples with meaningful fine labels.
+
+**Input resolution.** Going from 64×64 to 128×128 improved both heads substantially; 256×256 added
+very little. For the live video pipeline, *lower*-resolution crops actually helped — they kept the
+YOLO + CNN loop closer to real time and improved detection of small, distant targets.
+
+## Data
+
+The unified training corpus is published on Kaggle:
+**[loggger/fpv-images](https://www.kaggle.com/datasets/loggger/fpv-images)** (~272k labeled paths
+collected, 182,413 samples used after balancing and de-duplication).
+
+`src/build_dataset.py` downloads it via `kagglehub` and rebuilds the corpus locally.
+
+## Trained weights
+
+`models/` holds the label map. The trained classifier checkpoint (`best_model.h5`, ~97 MB) is too
+large for the repository — it is attached to the [latest release](../../releases/latest). Download it
+into `data_kagglehub_unified/output/` (or point `--model` at it directly).
+
+## Running it
+
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+python src/build_dataset.py --out data_kagglehub_unified --images-per-class 1000 --size 128
+```
+
+```bash
+DATA_ROOT=data_kagglehub_unified python src/train_model.py
+```
+
+```bash
+python src/realtime_yolo_classifier.py --source 0 --model data_kagglehub_unified/output/best_model.h5 --label-map models/label_map.json
+```
+
+`--source` accepts a webcam index as a string (`"0"`) or a path to a video file. `--yolo-weights`
+defaults to `yolov8n-seg.pt`; any YOLO *segmentation* checkpoint works.
+
+The training and evaluation scripts read their dataset root from the `DATA_ROOT` environment
+variable, defaulting to `./data_kagglehub_unified`.
+
+## Limitations
+
+- **Borderline crops.** Segmentation masks that mix target and background pixels; when background
+  dominates the crop the classifier defaults to an invalid label even when part of a target is visible.
+- **Small or occluded targets.** Distant or partially blocked objects give too few pixels for a
+  confident fine-class prediction.
+- **Visually similar classes.** `soldier` vs `civilian`, `bird` vs `random_animal`, and
+  `invalid_nontarget` vs `invalid_background` account for most off-diagonal confusion-matrix mass.
+
+## Repository layout
+
+```
+src/         runnable stage scripts
+notebooks/   the original Colab notebooks (outputs stripped)
+results/     confusion matrices, training curves, classification reports
+models/      label map (weights are attached to the release)
+docs/        full technical report (PDF)
+```
+
+The notebooks are the versions that actually produced these results; the scripts are the same code
+with Colab-specific paths replaced by relative defaults.
+
+## Report
+
+[`docs/Drone_Targeting_Model_Pipeline_Report.pdf`](docs/Drone_Targeting_Model_Pipeline_Report.pdf) —
+full methodology, dataset construction, and error analysis.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

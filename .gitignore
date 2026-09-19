@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Datasets and build output (rebuild with src/build_dataset.py)
+data_kagglehub_unified/
+images/
+metadata.csv
+metadata.jsonl
+output/
+*.zip
+
+# Trained weights (attached to the GitHub release instead)
+*.h5
+*.keras
+*.pt
+
+# Video in/out
+*.mp4
+*.avi
+*.webm
+
+# OS
+.DS_Store
+Thumbs.db

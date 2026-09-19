@@ -1,0 +1,65 @@
+{
+  "fine_classes": [
+    "aerial_landscape",
+    "bird",
+    "civilian",
+    "civilian_vehicle",
+    "cloud_blanksky",
+    "flying_target",
+    "random_animal",
+    "rock_debris",
+    "soldier",
+    "tank_av",
+    "tree_shrub"
+  ],
+  "fine_to_index": {
+    "aerial_landscape": 0,
+    "bird": 1,
+    "civilian": 2,
+    "civilian_vehicle": 3,
+    "cloud_blanksky": 4,
+    "flying_target": 5,
+    "random_animal": 6,
+    "rock_debris": 7,
+    "soldier": 8,
+    "tank_av": 9,
+    "tree_shrub": 10
+  },
+  "alias_to_canonical": {
+    "birds": "bird",
+    "avian": "bird",
+    "clouds": "cloud",
+    "cloudscape": "cloud",
+    "skyview": "aerial_landscape",
+    "aerial": "aerial_landscape",
+    "aerial_scene": "aerial_landscape",
+    "overhead_landscape": "aerial_landscape",
+    "buildings": "building",
+    "skyscraper": "building",
+    "rooftop": "building",
+    "mountains": "mountain",
+    "peak": "mountain",
+    "ridge": "mountain",
+    "aircraft": "airplane",
+    "airliner": "airplane",
+    "plane": "airplane"
+  },
+  "coarse_classes": [
+    "invalid_background",
+    "invalid_nontarget",
+    "valid"
+  ],
+  "fine_to_coarse": {
+    "aerial_landscape": "invalid_background",
+    "bird": "invalid_background",
+    "civilian": "invalid_nontarget",
+    "civilian_vehicle": "invalid_nontarget",
+    "cloud_blanksky": "invalid_background",
+    "flying_target": "valid",
+    "random_animal": "invalid_background",
+    "rock_debris": "invalid_background",
+    "soldier": "valid",
+    "tank_av": "valid",
+    "tree_shrub": "invalid_background"
+  }
+}

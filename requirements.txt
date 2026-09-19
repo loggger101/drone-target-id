@@ -1,0 +1,16 @@
+# Stage 1 — dataset builder
+kagglehub
+Pillow
+tqdm
+pandas
+
+# Stage 2 — training / evaluation
+tensorflow
+numpy
+scikit-learn
+matplotlib
+seaborn
+
+# Stage 3 — real-time YOLO + classifier
+ultralytics
+opencv-python
