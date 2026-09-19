@@ -14,21 +14,29 @@ Held-out test set: **27,362 samples** across 11 fine classes. Naïve single-clas
 
 | Head | Accuracy | Macro F1 | Baseline |
 |---|---|---|---|
-| Fine (11-way) | 87.62% | 0.8524 | 23.52% |
-| Coarse (3-way valid/invalid) | 91.17% | 0.9117 | 34.50% |
+| Fine (11-way) | **87.08%** | 0.8358 (P 0.8570 / R 0.8208) | 23.52% |
+| Coarse (3-way valid/invalid) | **91.31%** | 0.9129 (P 0.9128 / R 0.9130) | 34.50% |
 
 <p align="center">
   <img src="results/final_confusion_fine.png" width="520" alt="Fine-head confusion matrix across 11 classes">
 </p>
 
-Per-class precision is strongest on visually distinct categories (`aerial_landscape` 0.970,
-`civilian_vehicle` 0.945, `cloud_blanksky` 0.944) and weakest where classes share appearance
-(`civilian` 0.750, `random_animal` 0.777, `rock_debris` 0.770). Full breakdowns are in
-[`results/`](results).
+Per-class precision is strongest on visually distinct categories (`civilian_vehicle` 0.954,
+`tank_av` 0.943, `aerial_landscape` 0.931) and weakest where classes share appearance
+(`rock_debris` 0.755, `soldier` 0.773, `civilian` 0.788). Full breakdowns, including per-class recall
+and both confusion matrices, are in [`results/test_detailed_metrics.txt`](results/test_detailed_metrics.txt).
 
-> The figures above come from the 128×128 / 50-epoch run whose artifacts are checked in here. The
-> project page quotes a sibling run of the same architecture (87.1% fine / 91.3% coarse) — the
-> baselines and test-set size are identical, the headline accuracies differ by a few tenths of a point.
+### Which run these numbers come from
+
+The architecture was trained at several input resolutions. The figures above — and the ones on the
+project page — are the **256 × 256 / 20-epoch** run, and `results/` at the top level holds that run's
+artifacts.
+
+[`results/resolution-study-128x128/`](results/resolution-study-128x128) holds the **128 × 128 /
+50-epoch** run for comparison: 87.62% fine / 91.17% coarse on the same 27,362-sample test set. The
+two land within a few tenths of a point of each other, which is what "differences negligible" in the
+original folder names refers to. 64 × 64 was clearly worse and 256 × 256 added very little over
+128 × 128, so for offline classification 128 × 128 is the sweet spot on cost.
 
 ## Pipeline
 
@@ -82,8 +90,9 @@ collected, 182,413 samples used after balancing and de-duplication).
 the real-time video pipeline — the low-resolution crops that kept the YOLO + CNN loop closest to real
 time. [`models/label_map.json`](models/label_map.json) is the matching class map.
 
-The 128×128 checkpoint that produced the headline offline metrics is ~97 MB and is not in the
-repository. Rebuild it with `src/train_model.py` at `IMAGE_SIZE = (128, 128)`, or ask for a copy.
+The offline checkpoints are too large for the repository: the 256 × 256 run behind the headline
+numbers is ~385 MB, and the 128 × 128 run is ~97 MB. Rebuild either with `src/train_model.py` by
+setting `IMAGE_SIZE` accordingly, or ask for a copy.
 
 ## Running it
 
@@ -123,7 +132,8 @@ variable, defaulting to `./data_kagglehub_unified`.
 ```
 src/         runnable stage scripts
 notebooks/   the original Colab notebooks (outputs stripped)
-results/     confusion matrices, training curves, classification reports
+results/     the published 256x256 run: confusion matrix, curves, reports, full metrics
+  resolution-study-128x128/   the same artifacts for the 128x128 run
 models/      real-time classifier weights + label map
 docs/        full technical report (PDF)
 ```
@@ -139,6 +149,9 @@ nothing else changed. `src/` is the same code lifted out of those cells, with ex
   at relative paths instead of hard-coded local ones. The originals are kept in comments.
 - `build_dataset.py` — the entry point calls `main()` rather than `main(argv=[])`, so command-line
   arguments are honoured when the file is run as a script.
+- `build_dataset.py` — the JPEG quality default is written as `100` instead of `512`. JPEG quality is
+  defined over 1–100; libjpeg silently clamps anything higher, so the corpus was always encoded at
+  100 and the output is byte-for-byte unchanged. The literal now states what actually happened.
 
 Every other byte matches the notebooks.
 

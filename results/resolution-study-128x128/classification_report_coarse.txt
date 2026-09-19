@@ -1,0 +1,9 @@
+                    precision    recall  f1-score   support
+
+ invalid_nontarget     0.9105    0.9179    0.9142      9439
+invalid_background     0.8941    0.9310    0.9122      8647
+             valid     0.9309    0.8875    0.9087      9276
+
+          accuracy                         0.9117     27362
+         macro avg     0.9118    0.9121    0.9117     27362
+      weighted avg     0.9122    0.9117    0.9117     27362
