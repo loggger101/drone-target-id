@@ -78,9 +78,12 @@ collected, 182,413 samples used after balancing and de-duplication).
 
 ## Trained weights
 
-`models/` holds the label map. The trained classifier checkpoint (`best_model.h5`, ~97 MB) is too
-large for the repository — it is attached to the [latest release](../../releases/latest). Download it
-into `data_kagglehub_unified/output/` (or point `--model` at it directly).
+[`models/best_model_32x32.h5`](models/best_model_32x32.h5) (7.2 MB) is the 32×32 classifier used by
+the real-time video pipeline — the low-resolution crops that kept the YOLO + CNN loop closest to real
+time. [`models/label_map.json`](models/label_map.json) is the matching class map.
+
+The 128×128 checkpoint that produced the headline offline metrics is ~97 MB and is not in the
+repository. Rebuild it with `src/train_model.py` at `IMAGE_SIZE = (128, 128)`, or ask for a copy.
 
 ## Running it
 
@@ -97,7 +100,7 @@ DATA_ROOT=data_kagglehub_unified python src/train_model.py
 ```
 
 ```bash
-python src/realtime_yolo_classifier.py --source 0 --model data_kagglehub_unified/output/best_model.h5 --label-map models/label_map.json
+python src/realtime_yolo_classifier.py --source 0 --model models/best_model_32x32.h5 --label-map models/label_map.json
 ```
 
 `--source` accepts a webcam index as a string (`"0"`) or a path to a video file. `--yolo-weights`
@@ -121,7 +124,7 @@ variable, defaulting to `./data_kagglehub_unified`.
 src/         runnable stage scripts
 notebooks/   the original Colab notebooks (outputs stripped)
 results/     confusion matrices, training curves, classification reports
-models/      label map (weights are attached to the release)
+models/      real-time classifier weights + label map
 docs/        full technical report (PDF)
 ```
 

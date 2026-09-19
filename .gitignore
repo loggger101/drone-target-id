@@ -13,10 +13,12 @@ metadata.jsonl
 output/
 *.zip
 
-# Trained weights (attached to the GitHub release instead)
+# Trained weights — checkpoints written during training. The real-time
+# classifier in models/ is committed and exempted below.
 *.h5
 *.keras
 *.pt
+!models/best_model_32x32.h5
 
 # Video in/out
 *.mp4
