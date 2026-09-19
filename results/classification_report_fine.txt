@@ -1,17 +1,17 @@
                   precision    recall  f1-score   support
 
-aerial_landscape     0.9701    0.9574    0.9637      1525
-            bird     0.8270    0.7039    0.7605      1243
-        civilian     0.7500    0.8087    0.7782      3465
-civilian_vehicle     0.9445    0.9598    0.9521      5974
-  cloud_blanksky     0.9439    0.9699    0.9568      1198
-   flying_target     0.9115    0.8866    0.8988      6435
-   random_animal     0.7773    0.8558    0.8147      2635
-     rock_debris     0.7704    0.7431    0.7565      1386
-         soldier     0.7989    0.5640    0.6612       789
-         tank_av     0.9302    0.9357    0.9329      2052
-      tree_shrub     0.9129    0.8894    0.9010       660
+aerial_landscape     0.9306    0.9666    0.9482      1525
+            bird     0.8123    0.6613    0.7290      1243
+        civilian     0.7882    0.8237    0.8055      3465
+civilian_vehicle     0.9538    0.9545    0.9541      5974
+  cloud_blanksky     0.9174    0.9457    0.9314      1198
+   flying_target     0.8629    0.9310    0.8956      6435
+   random_animal     0.8027    0.8231    0.8128      2635
+     rock_debris     0.7547    0.6616    0.7051      1386
+         soldier     0.7730    0.5526    0.6445       789
+         tank_av     0.9426    0.8635    0.9013      2052
+      tree_shrub     0.8885    0.8455    0.8665       660
 
-        accuracy                         0.8762     27362
-       macro avg     0.8670    0.8431    0.8524     27362
-    weighted avg     0.8772    0.8762    0.8755     27362
+        accuracy                         0.8708     27362
+       macro avg     0.8570    0.8208    0.8358     27362
+    weighted avg     0.8699    0.8708    0.8688     27362

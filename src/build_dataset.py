@@ -156,7 +156,10 @@ DATASETS: List[dict] = [
 # ============================================================
 
 DEFAULT_SIZE = 512
-DEFAULT_JPG_QUALITY = 512
+# Was 512, which is out of range for JPEG (valid: 1-100). libjpeg clamps anything
+# above 100 down to 100, so the dataset was in fact written at quality=100 and
+# this change is byte-for-byte identical -- it just states the real value.
+DEFAULT_JPG_QUALITY = 100
 RNG = random.Random(1337)
 
 # ============================================================
@@ -489,7 +492,7 @@ def main(argv: Optional[List[str]] = None):
     ap.add_argument("--size", type=int, default=DEFAULT_SIZE, help="Output square size (px)")
     ap.add_argument("--splits", type=float, nargs=3, default=[0.8,0.1,0.1], metavar=("TRAIN","VAL","TEST"))
     ap.add_argument("--seed", type=int, default=1337, help="RNG seed")
-    ap.add_argument("--jpg-quality", type=int, default=512, help="JPEG quality")
+    ap.add_argument("--jpg-quality", type=int, default=DEFAULT_JPG_QUALITY, help="JPEG quality (1-100)")
     ap.add_argument("--zip", action="store_true", help="Zip dataset at the end")
     ap.add_argument("--classes", type=str, default=None, help="Comma-separated subset of canonical labels to keep")
     args, _ = ap.parse_known_args(argv)
