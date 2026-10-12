@@ -5,7 +5,8 @@ tqdm
 pandas
 
 # Stage 2 — training / evaluation
-tensorflow
+# models/best_model_32x32.h5 was saved with Keras 3.10; TF 2.16 is the first on Keras 3
+tensorflow>=2.16
 numpy
 scikit-learn
 matplotlib
