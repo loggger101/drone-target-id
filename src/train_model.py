@@ -403,7 +403,7 @@ for k in ["fine_output_loss", "coarse_output_loss"]:
     vk = "val_" + k
     if vk in hist:
         style = "o--" if "fine" in k else "s--"
-        plt.plot(epochs, hist[vk], style, label=k.replace("_", " "))
+        plt.plot(epochs, hist[vk], style, label=vk.replace("_", " "))
 plt.xlabel("Epoch"); plt.ylabel("Loss"); plt.title("Loss Curves"); plt.legend()
 
 plt.tight_layout()

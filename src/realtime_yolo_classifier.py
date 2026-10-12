@@ -9,8 +9,9 @@ What this does
 • Runs a YOLO SEGMENTATION detector to find multiple objects per frame
 • Uses instance masks (not just boxes) to color the actual object shape
 • Runs YOUR trained Keras classifier on each detected crop, but ONLY uses the COARSE head:
-   - Coarse classes come from label_map.json["coarse_classes"], e.g.:
-         ["invalid_background", "invalid_nontarget", "valid"]
+   - Coarse classes come from label_map.json["coarse_classes"], read in the
+     head's trained order (see TRAINED_COARSE_ORDER):
+         ["invalid_nontarget", "invalid_background", "valid"]
    - "valid"             -> green mask + label
    - "invalid_nontarget" -> red mask + label
    - "invalid_background"-> IGNORE (no mask / no label drawn)
@@ -95,8 +96,8 @@ def parse_args():
                     help="Fractional overlap between tiles (0–0.5). Higher = more redundancy.")
 
     # Classifier input size
-    ap.add_argument("--clf-img-size", type=int, nargs=2, default=[256, 256], metavar=("H","W"),
-                    help="Input size for your classifier crops")
+    ap.add_argument("--clf-img-size", type=int, nargs=2, default=None, metavar=("H","W"),
+                    help="Input size for your classifier crops (default: the model's own input size)")
 
     # Input / output
     ap.add_argument("--source", type=str,
@@ -133,23 +134,31 @@ def parse_args():
 # ------------------------
 # Helpers
 # ------------------------
+# Output order of the coarse head, fixed by coarse_labels_order in train_model.py.
+# label_map.json lists the same three names sorted (invalid_background first);
+# reading the head in that order swaps invalid_nontarget and invalid_background.
+TRAINED_COARSE_ORDER = ["invalid_nontarget", "invalid_background", "valid"]
+
 def load_coarse_classes(label_map_path: str):
     """
     Load list of coarse classes from label_map.json["coarse_classes"].
     Expected to include at least: "invalid_background", "invalid_nontarget", "valid".
+    When it holds exactly those three, they are returned in the trained head order.
     """
     p = Path(label_map_path)
     if not p.exists():
         print(f"[WARN] label_map not found at {p}, falling back to default coarse classes.")
-        return ["invalid_background", "invalid_nontarget", "valid"]
+        return list(TRAINED_COARSE_ORDER)
     try:
         with open(p, "r", encoding="utf-8") as f:
             m = json.load(f)
         if isinstance(m, dict) and "coarse_classes" in m and isinstance(m["coarse_classes"], list):
+            if sorted(m["coarse_classes"]) == sorted(TRAINED_COARSE_ORDER):
+                return list(TRAINED_COARSE_ORDER)
             return m["coarse_classes"]
     except Exception as e:
         print(f"[WARN] Failed to parse coarse_classes from label_map: {e}")
-    return ["invalid_background", "invalid_nontarget", "valid"]
+    return list(TRAINED_COARSE_ORDER)
 
 def preprocess_for_classifier(bgr: np.ndarray, size_hw: tuple[int,int]) -> np.ndarray:
     """Resize BGR -> RGB, scale to [0,1], add batch dim."""
@@ -598,6 +607,10 @@ def main():
 
     # Load classifier (your Keras model) — we ONLY use the COARSE head in real-time path
     clf = tf.keras.models.load_model(args.model)
+    if args.clf_img_size is None:
+        # Crops must match the resolution the classifier was trained at
+        args.clf_img_size = list(clf.input_shape[1:3])
+    print(f"[INFO] Classifier input size: {args.clf_img_size[0]}x{args.clf_img_size[1]}")
 
     # Load classes from label_map.json
     coarse_classes = load_coarse_classes(args.label_map)
